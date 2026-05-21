@@ -130,9 +130,7 @@ ENVEOF
 
     chmod 600 .env
     success ".env template created"
-    log "⚠️  IMPORTANT: Run 'nano $APP_DIR/.env' and fill in DATABASE_URL password and OPENROUTER_API_KEY!"
-    log "Then re-run: bash deploy.sh"
-    exit 0
+    log "⚠️  IMPORTANT: Edit $APP_DIR/.env and fill in DATABASE_URL password and OPENROUTER_API_KEY!"
 fi
 
 # Initialize Database Schema
