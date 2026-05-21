@@ -95,12 +95,15 @@ fi
 # Create .env File
 log "Step 6: Creating .env configuration file..."
 cd "$APP_DIR"
-if [ -f .env ]; then
-    log "⚠️  .env file already exists, backing up to .env.backup"
-    cp .env .env.backup
-fi
 
-cat > .env << 'ENVEOF'
+# Only create .env if it doesn't already have real credentials
+if [ -f .env ] && ! grep -q 'YOUR_DB_PASSWORD_HERE' .env && ! grep -q 'YOUR_OPENROUTER_KEY_HERE' .env; then
+    log ".env already has real credentials, skipping overwrite"
+    success ".env file already configured"
+else
+    [ -f .env ] && cp .env .env.backup && log "⚠️  Backed up existing .env to .env.backup"
+
+    cat > .env << 'ENVEOF'
 APP_ENV=production
 
 # Database Configuration -- UPDATE WITH REAL PASSWORD
@@ -108,7 +111,7 @@ DATABASE_URL=postgresql+psycopg2://rvd024:YOUR_DB_PASSWORD_HERE@localhost:5432/a
 
 # OpenRouter API -- UPDATE WITH REAL KEY
 OPENROUTER_API_KEY=YOUR_OPENROUTER_KEY_HERE
-OPENROUTER_MODEL=openai/gpt-4-turbo
+OPENROUTER_MODEL=openrouter/free
 OPENROUTER_BASE_URL=https://openrouter.ai/api/v1
 
 # Scheduler
@@ -125,9 +128,12 @@ ENABLE_SCRAPEGRAPH_AI=true
 ENABLE_COMPANY_ENRICHMENT=true
 ENVEOF
 
-chmod 600 .env
-success ".env file created"
-log "⚠️  IMPORTANT: Run 'nano $APP_DIR/.env' and fill in DATABASE_URL password and OPENROUTER_API_KEY!"
+    chmod 600 .env
+    success ".env template created"
+    log "⚠️  IMPORTANT: Run 'nano $APP_DIR/.env' and fill in DATABASE_URL password and OPENROUTER_API_KEY!"
+    log "Then re-run: bash deploy.sh"
+    exit 0
+fi
 
 # Initialize Database Schema
 log "Step 7: Initializing database schema..."
