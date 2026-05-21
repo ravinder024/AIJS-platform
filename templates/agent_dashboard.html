@@ -1,0 +1,320 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Job Agent Dashboard</title>
+    <style>
+        :root {
+            --bg: #f6f4ef;
+            --card: #fffdf7;
+            --text: #1d2a33;
+            --accent: #005f73;
+            --line: #d8d0c2;
+        }
+        body { font-family: "Segoe UI", Tahoma, sans-serif; margin: 0; background: var(--bg); color: var(--text); }
+        .wrap { max-width: 1080px; margin: 28px auto; padding: 0 16px; }
+        .card { background: var(--card); border: 1px solid var(--line); border-radius: 10px; padding: 16px; margin-bottom: 14px; }
+        h1, h2 { margin-top: 0; }
+        input, textarea, select, button {
+            width: 100%;
+            box-sizing: border-box;
+            margin-top: 8px;
+            margin-bottom: 10px;
+            padding: 10px;
+            border-radius: 8px;
+            border: 1px solid var(--line);
+            font-size: 14px;
+        }
+        button { background: var(--accent); color: #fff; border: none; cursor: pointer; }
+        pre {
+            background: #f1ede5;
+            border: 1px solid var(--line);
+            border-radius: 8px;
+            padding: 10px;
+            overflow-x: auto;
+            white-space: pre-wrap;
+        }
+        .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+        .job { border-top: 1px solid var(--line); padding-top: 12px; margin-top: 12px; }
+        .meta { color: #4d5a65; font-size: 12px; }
+        .row { display: flex; gap: 8px; flex-wrap: wrap; }
+        .row button { width: auto; padding: 8px 12px; }
+        details { margin-top: 8px; }
+        @media (max-width: 720px) { .grid { grid-template-columns: 1fr; } }
+    </style>
+</head>
+<body>
+    <div class="wrap">
+        <h1>Daily Job Agent</h1>
+
+        <div class="card">
+            <h2>Create Profile</h2>
+            <div class="grid">
+                <div>
+                    <label>Name</label>
+                    <input id="name" placeholder="PM Remote Daily">
+                </div>
+                <div>
+                    <label>Role Query</label>
+                    <input id="role_query" placeholder="Senior Product Manager">
+                </div>
+                <div>
+                    <label>Location</label>
+                    <input id="location" placeholder="Remote">
+                </div>
+                <div>
+                    <label>Include Keywords (comma separated)</label>
+                    <input id="include_keywords" placeholder="B2B SaaS, Growth, AI">
+                </div>
+                <div>
+                    <label>Exclude Keywords (comma separated)</label>
+                    <input id="exclude_keywords" placeholder="intern, contract">
+                </div>
+                <div>
+                    <label>Include Companies (comma separated)</label>
+                    <input id="include_companies" placeholder="Atlassian, Stripe">
+                </div>
+                <div>
+                    <label>Exclude Companies (comma separated)</label>
+                    <input id="exclude_companies" placeholder="CompanyA, CompanyB">
+                </div>
+                <div>
+                    <label>Target Locations (comma separated)</label>
+                    <input id="target_locations" placeholder="Bangalore, London, Remote">
+                </div>
+                <div>
+                    <label>Additional Roles (comma separated)</label>
+                    <input id="role_queries" placeholder="Product Lead, Growth PM">
+                </div>
+                <div>
+                    <label>Work Settings (comma separated)</label>
+                    <input id="work_settings" placeholder="remote, hybrid, onsite">
+                </div>
+                <div>
+                    <label>Industries (comma separated)</label>
+                    <input id="industries" placeholder="Fintech, SaaS, Healthtech">
+                </div>
+                <div>
+                    <label>Job Types (comma separated)</label>
+                    <input id="job_types" placeholder="full-time, contract">
+                </div>
+                <div>
+                    <label>Company Size Min</label>
+                    <input id="company_size_min" placeholder="50">
+                </div>
+                <div>
+                    <label>Company Size Max</label>
+                    <input id="company_size_max" placeholder="5000">
+                </div>
+                <div>
+                    <label>Experience Min Years</label>
+                    <input id="experience_min_years" placeholder="4">
+                </div>
+                <div>
+                    <label>Experience Max Years</label>
+                    <input id="experience_max_years" placeholder="12">
+                </div>
+                <div>
+                    <label>Min Glassdoor Rating</label>
+                    <input id="min_glassdoor_rating" placeholder="3.8">
+                </div>
+                <div>
+                    <label>Salary Min</label>
+                    <input id="salary_min" placeholder="120000">
+                </div>
+                <div>
+                    <label>Salary Max</label>
+                    <input id="salary_max" placeholder="250000">
+                </div>
+                <div>
+                    <label>Recently Funded Only</label>
+                    <input id="recently_funded_only" placeholder="true/false">
+                </div>
+            </div>
+            <button onclick="createProfile()">Create Profile</button>
+        </div>
+
+        <div class="card">
+            <h2>Run</h2>
+            <label>Select Profile</label>
+            <select id="profileSelect" onchange="refreshAgentState()"></select>
+            <div class="row">
+                <button onclick="executeRun()">Run Agent Now</button>
+                <button onclick="loadJobs()">Load Ranked Jobs</button>
+                <button onclick="refreshAgentState()">Refresh Agent State</button>
+            </div>
+            <pre id="runOutput"></pre>
+        </div>
+
+        <div class="card">
+            <h2>Agent State</h2>
+            <pre id="agentState">Select profile to load state.</pre>
+        </div>
+
+        <div class="card">
+            <h2>Ranked Jobs</h2>
+            <div id="jobs"></div>
+        </div>
+    </div>
+
+    <script>
+        async function api(path, options = {}) {
+            const res = await fetch(path, {
+                headers: { "Content-Type": "application/json" },
+                ...options
+            });
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.error || "Request failed");
+            return data;
+        }
+
+        function selectedProfileId() {
+            const id = document.getElementById("profileSelect").value;
+            return Number(id || 0);
+        }
+
+        async function refreshProfiles() {
+            const data = await api("/api/profiles");
+            const sel = document.getElementById("profileSelect");
+            sel.innerHTML = "";
+            data.profiles.forEach(p => {
+                const opt = document.createElement("option");
+                opt.value = p.id;
+                opt.textContent = `${p.name} (${p.role_query} @ ${p.location})`;
+                sel.appendChild(opt);
+            });
+            if (data.profiles.length > 0) {
+                await refreshAgentState();
+            }
+        }
+
+        async function createProfile() {
+            try {
+                await api("/api/profiles", {
+                    method: "POST",
+                    body: JSON.stringify({
+                        name: document.getElementById("name").value.trim(),
+                        role_query: document.getElementById("role_query").value.trim(),
+                        location: document.getElementById("location").value.trim() || "Remote",
+                        include_keywords: document.getElementById("include_keywords").value,
+                        exclude_keywords: document.getElementById("exclude_keywords").value,
+                        include_companies: document.getElementById("include_companies").value,
+                        exclude_companies: document.getElementById("exclude_companies").value,
+                        target_locations: document.getElementById("target_locations").value,
+                        role_queries: document.getElementById("role_queries").value,
+                        work_settings: document.getElementById("work_settings").value,
+                        industries: document.getElementById("industries").value,
+                        job_types: document.getElementById("job_types").value,
+                        company_size_min: document.getElementById("company_size_min").value,
+                        company_size_max: document.getElementById("company_size_max").value,
+                        experience_min_years: document.getElementById("experience_min_years").value,
+                        experience_max_years: document.getElementById("experience_max_years").value,
+                        min_glassdoor_rating: document.getElementById("min_glassdoor_rating").value,
+                        salary_min: document.getElementById("salary_min").value,
+                        salary_max: document.getElementById("salary_max").value,
+                        recently_funded_only: document.getElementById("recently_funded_only").value
+                    })
+                });
+                await refreshProfiles();
+                alert("Profile created.");
+            } catch (err) {
+                alert(err.message);
+            }
+        }
+
+        async function executeRun() {
+            try {
+                const profileId = selectedProfileId();
+                if (!profileId) throw new Error("Select profile first.");
+                const data = await api("/api/runs/execute", {
+                    method: "POST",
+                    body: JSON.stringify({ profile_id: profileId })
+                });
+                document.getElementById("runOutput").textContent = JSON.stringify(data, null, 2);
+                await refreshAgentState();
+                await loadJobs();
+            } catch (err) {
+                alert(err.message);
+            }
+        }
+
+        async function refreshAgentState() {
+            try {
+                const profileId = selectedProfileId();
+                if (!profileId) return;
+                const data = await api(`/api/agent/state?profile_id=${profileId}`);
+                document.getElementById("agentState").textContent = JSON.stringify(data, null, 2);
+            } catch (err) {
+                document.getElementById("agentState").textContent = err.message;
+            }
+        }
+
+        async function sendFeedback(jobId, vote) {
+            const profileId = selectedProfileId();
+            const reason = prompt("Reason tags (comma-separated), optional:") || "";
+            const note = prompt("Optional note:") || "";
+            try {
+                await api("/api/feedback", {
+                    method: "POST",
+                    body: JSON.stringify({
+                        job_id: jobId,
+                        profile_id: profileId,
+                        vote,
+                        reason_tags: reason,
+                        note
+                    })
+                });
+                alert("Feedback saved.");
+                await refreshAgentState();
+            } catch (err) {
+                alert(err.message);
+            }
+        }
+
+        function renderSignals(explanation) {
+            if (!explanation || !explanation.signals) return "No explanation available.";
+            const lines = explanation.signals.map(s => {
+                const name = s.type || "signal";
+                const value = typeof s.value === "number" ? s.value.toFixed(3) : String(s.value || "");
+                const extra = s.tag ? ` tag=${s.tag}` : (s.keyword ? ` keyword=${s.keyword}` : "");
+                return `${name}: ${value}${extra}`;
+            });
+            return lines.join("\n");
+        }
+
+        async function loadJobs() {
+            try {
+                const profileId = selectedProfileId();
+                if (!profileId) throw new Error("Select profile first.");
+                const data = await api(`/api/jobs?profile_id=${profileId}&limit=80&include_explanations=1`);
+                const container = document.getElementById("jobs");
+                container.innerHTML = "";
+                data.jobs.forEach(job => {
+                    const block = document.createElement("div");
+                    block.className = "job";
+                    block.innerHTML = `
+                        <strong>${job.title}</strong><br>
+                        <span>${job.company_name} - ${job.location}</span><br>
+                        <span class="meta">Score: ${job.ranking_score} | Source: ${job.source}</span><br>
+                        <a href="${job.source_url}" target="_blank" rel="noopener">Open job</a>
+                        <details>
+                            <summary>Why this job ranked here</summary>
+                            <pre>${renderSignals(job.ranking_explanation)}</pre>
+                        </details>
+                        <div class="row" style="margin-top:8px;">
+                            <button onclick="sendFeedback(${job.id}, 'like')">Relevant</button>
+                            <button onclick="sendFeedback(${job.id}, 'dislike')">Not relevant</button>
+                        </div>
+                    `;
+                    container.appendChild(block);
+                });
+            } catch (err) {
+                alert(err.message);
+            }
+        }
+
+        refreshProfiles().catch(() => {});
+    </script>
+</body>
+</html>

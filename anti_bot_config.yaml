@@ -1,0 +1,109 @@
+# Anti-Bot Evasion Configuration
+# Central configuration for all anti-bot measures
+
+request_delays:
+  # Base delay between requests (seconds)
+  base_delay: 2.0
+  
+  # Random jitter to add (seconds)
+  jitter: 3.0
+  
+  # Aggressive sites get longer delays
+  aggressive_delay: 10.0
+  
+  # Sources considered aggressive (blocking frequently)
+  aggressive_sources:
+    - indeed
+    - wellfound
+    - linkedin
+
+user_agent_rotation:
+  # Enable user-agent rotation
+  enabled: true
+  
+  # Update frequency: number of requests before rotating
+  rotate_every: 5
+
+browser_fingerprinting:
+  # Enable browser fingerprint randomization (Playwright)
+  enabled: true
+  
+  # Randomize viewport size
+  randomize_viewport: true
+  
+  # Randomize timezone
+  randomize_timezone: true
+  
+  # Randomize geolocation
+  randomize_geolocation: true
+
+proxy_rotation:
+  # Enable proxy rotation (requires proxy service)
+  enabled: false
+  
+  # Proxy service type: 'bright_data', 'oxylabs', 'scraperapi', 'custom'
+  proxy_service: null
+  
+  # Proxy list for custom proxies (if enabled)
+  proxies: []
+
+batch_processing:
+  # Process jobs in batches
+  enabled: true
+  
+  # Batch size
+  batch_size: 10
+  
+  # Delay between batches (seconds)
+  batch_delay: 3.0
+
+behavioral_simulation:
+  # Simulate human-like behavior
+  enabled: true
+  
+  # Random scroll delays
+  scroll_delay_min: 0.5
+  scroll_delay_max: 2.0
+  
+  # Random typing delays
+  typing_delay_min: 0.05
+  typing_delay_max: 0.15
+
+source_health_tracking:
+  # Track and monitor source health
+  enabled: true
+  
+  # Block a source if block rate exceeds this
+  max_block_rate: 0.5
+  
+  # Minimum success rate to consider source healthy
+  min_success_rate: 0.5
+  
+  # Pause source temporarily if unhealthy (minutes)
+  pause_duration: 30
+
+scrapegraph_ai:
+  # ScrapeGraphAI fallback configuration
+  enabled: true
+  
+  # Use as primary scraper (experimental)
+  use_as_primary: false
+  
+  # Timeout for ScrapeGraphAI (seconds)
+  timeout: 30
+  
+  # Fallback when standard sources have < N jobs
+  fallback_threshold: 5
+
+logging:
+  # Log level: DEBUG, INFO, WARNING, ERROR
+  level: INFO
+  
+  # Log file path
+  file: job_scraper.log
+  
+  # Max log file size (MB)
+  max_size: 10
+  
+  # Number of backup log files
+  backup_count: 5

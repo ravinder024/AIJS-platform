@@ -1,0 +1,86 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+pip-wheel-metadata/
+share/python-wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# Virtual Environment
+.venv/
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Environment variables
+.env
+.env.local
+.env.*.local
+
+# Database
+*.db
+*.sqlite
+*.sqlite3
+*.log
+*.pot
+
+# Generated files
+job_listings_*.json
+agent_first_run_sample_*.csv
+debug_*.json
+
+# Credentials & Secrets
+credentials.json
+secrets.yaml
+.ssh/
+
+# Temporary
+tmp/
+temp/
+*.tmp
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Node (if using any node tools)
+node_modules/
+npm-debug.log
+
+# Output files
+*.csv
+output/
+
+# Playwright
+.pytest_cache/
+test-results/
+
+# Local testing
+test_output/
