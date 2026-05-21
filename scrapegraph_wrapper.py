@@ -19,28 +19,30 @@ logger = logging.getLogger(__name__)
 class ScrapeGraphAIWrapper:
     """Wrapper for ScrapeGraphAI with fallback handling."""
 
-    def __init__(self, api_key: Optional[str] = None, model: str = "claude-3-5-sonnet-20241022"):
+    def __init__(self, api_key: Optional[str] = None, model: Optional[str] = None):
         """
         Initialize ScrapeGraphAI wrapper.
 
         Args:
-            api_key: Anthropic API key (defaults to ANTHROPIC_API_KEY env var)
-            model: LLM model to use (default: Claude)
+            api_key: OpenRouter API key (defaults to OPENROUTER_API_KEY env var)
+            model: LLM model to use in OpenRouter format, e.g. "openai/gpt-3.5-turbo"
         """
         if SmartScraperGraph is None:
             raise ImportError(
                 "scrapegraphai not installed. Run: pip install scrapegraphai"
             )
 
-        self.api_key = api_key or os.getenv("ANTHROPIC_API_KEY")
+        self.api_key = api_key or os.getenv("OPENROUTER_API_KEY")
         if not self.api_key:
-            raise ValueError("ANTHROPIC_API_KEY environment variable not set")
+            raise ValueError("OPENROUTER_API_KEY environment variable not set")
 
-        self.model = model
+        self.model = model or os.getenv("OPENROUTER_MODEL", "openai/gpt-3.5-turbo")
+        self.base_url = os.getenv("OPENROUTER_BASE_URL", "https://openrouter.ai/api/v1")
         self.config = {
             "llm": {
                 "api_key": self.api_key,
-                "model": f"openai/{model}" if "gpt" in model else f"anthropic/{model}",
+                "model": self.model,
+                "base_url": self.base_url,
             },
             "browser_config": {
                 "headless": True,
